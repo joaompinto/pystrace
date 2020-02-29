@@ -4,9 +4,9 @@ Python library and command line tool for collecting strace events
 
 ## Purpose
 
-This library works as wrapper for strace generating syscall events that may be used by applications for system calls activity analisys.
+This library works as wrapper for strace generating syscall events, this events can be used by applications for system calls activity analisys.
 
-In order to be able to handle long process executions without massive log generation, the library uses a multiprocess architecture. The main process runs strace with the output being sent to a name FIFO, a secondary process consumes the data from the FIFO, parses, and generates the events.
+In order to handle long executions without generating massive aummounts of logs, the library creates a named FIFO and an extra process where the strace is executed outputing to the FIFO. The main process consumes all the data and generates the corresponding events.
 
 ## Install
 

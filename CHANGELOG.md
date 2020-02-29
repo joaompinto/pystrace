@@ -2,8 +2,7 @@
 
 ## 0.0.2
 
-* Generate tar.gz and provide docker import instructions
-* Removed unimplemented options from te CLI
+* Generate events on the main process
 
 ## 0.0.1
 

@@ -28,52 +28,66 @@ class Tracer:
             r"^(\d+)\s*(\w*)\((.*)\) = ([-\d]+)\s*(\w+)\s*(.*)$"
         )
 
-    def handle_strace_data(self, fifo_filename):
+    def _create_log_fifo(self):
+        self.temp_dir = TemporaryDirectory()
+        fifo_filename = Path(self.temp_dir.name).joinpath("strace")
+        self.fifo_filename = fifo_filename
+        os.mkfifo(fifo_filename, 0o600)
 
-        with open(fifo_filename) as fifo:
-            data = fifo.read()
-            while data:
-                for line in data.splitlines():
-                    syscall_data = self.parse_regex_ok.findall(line)
-                    if syscall_data:
-                        pid, syscall, arguments, result = syscall_data[0]
-                        syscall_dict = {
-                            "pid": int(pid),
-                            "syscall": syscall,
-                            "arguments": arguments,
-                            "result": int(result),
-                        }
-                        self.syscall_callback(syscall_dict)
-                    else:
-                        syscall_data = self.parse_regex_fail.findall(line)
+    def run(self):
+        self._create_log_fifo()
+        strace_process = Process(
+            target=self._run_strace)
+        strace_process.start()
+        rc = self.handle_strace_data()
+        strace_process.join()
+        return rc
+
+    def handle_strace_data(self):
+
+        while True:
+            with open(self.fifo_filename, 'r') as fifo:
+                data = fifo.read()
+                while data:
+                    # When there is an error during strace, it will not open the fifo
+                    # which means we only get  single FIFO item with the rc
+                    if data.isnumeric():
+                        rc = int(data)
+                        return rc
+                    for line in data.splitlines():
+                        syscall_data = self.parse_regex_ok.findall(line)
                         if syscall_data:
-                            (
-                                pid,
-                                syscall,
-                                arguments,
-                                result,
-                                errno,
-                                errdesc,
-                            ) = syscall_data[0]
+                            pid, syscall, arguments, result = syscall_data[0]
                             syscall_dict = {
                                 "pid": int(pid),
                                 "syscall": syscall,
                                 "arguments": arguments,
                                 "result": int(result),
-                                "errno": errno,
-                                "errdesc": errdesc,
                             }
                             self.syscall_callback(syscall_dict)
-                data = fifo.read()
+                        else:
+                            syscall_data = self.parse_regex_fail.findall(line)
+                            if syscall_data:
+                                (
+                                    pid,
+                                    syscall,
+                                    arguments,
+                                    result,
+                                    errno,
+                                    errdesc,
+                                ) = syscall_data[0]
+                                syscall_dict = {
+                                    "pid": int(pid),
+                                    "syscall": syscall,
+                                    "arguments": arguments,
+                                    "result": int(result),
+                                    "errno": errno,
+                                    "errdesc": errdesc,
+                                }
+                                self.syscall_callback(syscall_dict)
+                    data = fifo.read()
 
-    def run(self):
-        temp_dir = TemporaryDirectory()
-        fifo_filename = Path(temp_dir.name).joinpath("strace")
-        os.mkfifo(fifo_filename, 0o600)
-        log_watch_process = Process(
-            target=self.handle_strace_data, args=(fifo_filename,)
-        )
-        log_watch_process.start()
+    def _run_strace(self):
         strace_args = []
         if self.follow_childs:
             strace_args.append("-f")
@@ -81,7 +95,7 @@ class Tracer:
             strace_args += ["-e", f"status={self.filter_return}"]
         if self.filter_syscalls:
             strace_args += ["-e", f"trace={self.filter_syscalls}"]
-        strace_args += ["-o", fifo_filename]
+        strace_args += ["-o", self.fifo_filename]
         if self.debug:
             print("DEBUG ARGS:", strace_args)
         try:
@@ -89,16 +103,16 @@ class Tracer:
                 ["strace"] + strace_args + self.command_args, capture_output=True
             )
         except FileNotFoundError:
-            # Force the log watcher process to exit
-            with open(fifo_filename, "w") as output:
-                output.write("\n")
             print("Could not execute 'strace', is it installed?")
-            rc = -1
+            rc = 1
         else:
             rc = run_result.returncode
             if run_result.stdout:
                 print(run_result.stdout.strip().decode().strip("\n"))
             if rc != 0:
                 print((run_result.stderr.decode().strip("\n")), file=stderr)
-        log_watch_process.join()
-        return rc
+
+        with open(self.fifo_filename, "w") as output:
+            output.write(str(rc))
+
+
