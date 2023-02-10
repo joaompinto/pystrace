@@ -21,6 +21,13 @@ def parse_cmd_line():
         dest="filter_syscalls",
         default="",
     )
+    parser.add_option(
+        "--timeout",
+        "-t",
+        help="set timeout on process execution",
+        dest="timeout",
+        default=None,
+    )
     options, args = parser.parse_args()
     if len(args) == 0:
         print("Usage: {} [options] command".format(sys.argv[0]))

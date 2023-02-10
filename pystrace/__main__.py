@@ -14,6 +14,7 @@ def main():
         on_event,
         filter_syscalls=options.filter_syscalls,
         filter_return=options.filter_return,
+        timeout=int(options.timeout) if options.timeout else None,
         debug=options.debug,
     )
     exit_code = my_tracer.run()

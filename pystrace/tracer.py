@@ -15,6 +15,7 @@ class Tracer:
         follow_childs=True,
         filter_syscalls="",
         filter_return="",
+        timeout=None,
         debug=False,
     ):
         self.command_args = command_args
@@ -22,6 +23,7 @@ class Tracer:
         self.follow_childs = follow_childs
         self.filter_syscalls = filter_syscalls
         self.filter_return = filter_return
+        self.timeout = timeout
         self.debug = debug
         self.parse_regex_ok = re.compile(r"^(\d+)\s*(\w*)\((.*)\) = (\d+)$")
         self.parse_regex_fail = re.compile(
@@ -100,8 +102,11 @@ class Tracer:
             print("DEBUG ARGS:", strace_args)
         try:
             run_result = subprocess.run(
-                ["strace"] + strace_args + self.command_args, capture_output=True
+                ["strace"] + strace_args + self.command_args, capture_output=True,
+                timeout = self.timeout
             )
+        except subprocess.TimeoutExpired:
+            rc = 1
         except FileNotFoundError:
             print("Could not execute 'strace', is it installed?")
             rc = 1
