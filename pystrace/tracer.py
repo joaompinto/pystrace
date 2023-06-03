@@ -53,7 +53,7 @@ class Tracer:
                 while data:
                     # When there is an error during strace, it will not open the fifo
                     # which means we only get  single FIFO item with the rc
-                    if data.isnumeric():
+                    if data.lstrip("-").isnumeric():
                         rc = int(data)
                         return rc
                     for line in data.splitlines():
