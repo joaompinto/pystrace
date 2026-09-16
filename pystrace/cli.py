@@ -28,6 +28,14 @@ def parse_cmd_line():
         dest="timeout",
         default=None,
     )
+    parser.add_option(
+        "--output",
+        "-o",
+        help="write trace output to FILE (default: stderr)",
+        dest="output",
+        metavar="FILE",
+        default=sys.stderr,
+    )
     options, args = parser.parse_args()
     if len(args) == 0:
         print("Usage: {} [options] command".format(sys.argv[0]))
