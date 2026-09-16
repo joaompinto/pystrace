@@ -28,6 +28,13 @@ def parse_cmd_line():
         dest="timeout",
         default=None,
     )
+    parser.add_option(
+        "--jsonl",
+        "-j",
+        action="store_true",
+        help="output result as JSON lines (.jsonl) instead of Python dicts",
+        default=False,
+    )
     options, args = parser.parse_args()
     if len(args) == 0:
         print("Usage: {} [options] command".format(sys.argv[0]))

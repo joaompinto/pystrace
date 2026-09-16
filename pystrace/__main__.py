@@ -15,6 +15,7 @@ def main():
         filter_syscalls=options.filter_syscalls,
         filter_return=options.filter_return,
         timeout=int(options.timeout) if options.timeout else None,
+        as_jsonl=options.jsonl,
         debug=options.debug,
     )
     exit_code = my_tracer.run()
