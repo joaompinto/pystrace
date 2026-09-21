@@ -5,6 +5,7 @@ from sys import stderr
 import os
 import subprocess
 import re
+import json
 
 
 class Tracer:
@@ -16,6 +17,7 @@ class Tracer:
         filter_syscalls="",
         filter_return="",
         timeout=None,
+        as_jsonl=False,
         debug=False,
     ):
         self.command_args = command_args
@@ -24,6 +26,7 @@ class Tracer:
         self.filter_syscalls = filter_syscalls
         self.filter_return = filter_return
         self.timeout = timeout
+        self.as_jsonl = as_jsonl
         self.debug = debug
         self.parse_regex_ok = re.compile(r"^(\d+)\s*(\w*)\((.*)\) = (\d+)$")
         self.parse_regex_fail = re.compile(
@@ -66,7 +69,11 @@ class Tracer:
                                 "arguments": arguments,
                                 "result": int(result),
                             }
-                            self.syscall_callback(syscall_dict)
+                            if self.as_jsonl:
+                                event = json.dumps(syscall_dict)
+                            else:
+                                event = syscall_dict
+                            self.syscall_callback(event)
                         else:
                             syscall_data = self.parse_regex_fail.findall(line)
                             if syscall_data:
@@ -86,7 +93,11 @@ class Tracer:
                                     "errno": errno,
                                     "errdesc": errdesc,
                                 }
-                                self.syscall_callback(syscall_dict)
+                                if self.as_jsonl:
+                                    event = json.dumps(syscall_dict)
+                                else:
+                                    event = syscall_dict
+                                self.syscall_callback(event)
                     data = fifo.read()
 
     def _run_strace(self):

@@ -29,6 +29,13 @@ def parse_cmd_line():
         default=None,
     )
     parser.add_option(
+        "--jsonl",
+        "-j",
+        action="store_true",
+        help="output result as JSON lines (.jsonl) instead of Python dicts",
+        default=False,
+    )
+    parser.add_option(
         "--output",
         "-o",
         help="write trace output to FILE (default: stderr)",
