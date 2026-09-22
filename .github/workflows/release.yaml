@@ -7,18 +7,18 @@ on:
 jobs:
   build-n-publish:
     name: Build and publish Python 🐍 distributions 📦 to TestPyPI and PyPI
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@master
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.9
-        uses: actions/setup-python@master
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
-      - name: Upgrage core dependencies
+      - name: Upgrade core dependencies
         run: python -m pip install --upgrade pip setuptools wheel
 
       - name: Build a binary wheel and a source tarball
@@ -26,6 +26,6 @@ jobs:
 
       - name: Publish distribution 📦 to PyPI
         if: startsWith(github.ref, 'refs/tags')
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
